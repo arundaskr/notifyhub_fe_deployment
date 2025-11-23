@@ -64,14 +64,29 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     useEffect(() => {
         const fetchData = async () => {
             try {
-                setLoading(true)
-                const userResponse = await userService.getMe(); // Changed from usersResponse
-                const usersResponse = await userService.getAllUsers(); // Add this
-                const deptsResponse = await departmentService.getDepartments();
-                setUser(userResponse); // Changed from setUsers(usersResponse.data)
-                setUsers(usersResponse); // Add this
-                // setFollowers(usersResponse.data); // Removed
-                setDepartments(deptsResponse);
+                setLoading(true);
+    
+                const [userResult, usersResult, deptsResult] = await Promise.allSettled([
+                    userService.getMe(),
+                    userService.getAllUsers(),
+                    departmentService.getDepartments(),
+                ]);
+    
+                if (userResult.status === 'fulfilled') {
+                    setUser(userResult.value);
+                } else {
+                    setError(userResult.reason); // Or handle specific errors
+                }
+    
+                if (usersResult.status === 'fulfilled') {
+                    setUsers(usersResult.value);
+                }
+    
+                if (deptsResult.status === 'fulfilled') {
+                    setDepartments(deptsResult.value || []);
+                    
+                }
+    
             } catch (err) {
                 setError(err);
             } finally {
