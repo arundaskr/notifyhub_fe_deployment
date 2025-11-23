@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   TbBrandDribbble,
   TbBrandFacebook,
@@ -13,8 +13,48 @@ import Banner from "/public/images/backgrounds/profilebg.jpg";
 import Link from "next/link";
 import { Button } from "flowbite-react";
 import ProfileTab from "./ProfileTab";
+import { reminderService, departmentService, userService } from "@/app/services/api";
 
 const ProfileBanner = () => {
+    const [activeReminderCount, setActiveReminderCount] = useState<number>(0);
+    const [totalDepartmentsCount, setTotalDepartmentsCount] = useState<number>(0);
+    const [totalUsersCount, setTotalUsersCount] = useState<number>(0);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+
+                // Fetch Active Reminders
+                const reminders = await reminderService.getReminders();
+                const activeReminders = reminders.filter(reminder => reminder.active);
+                setActiveReminderCount(activeReminders.length);
+
+                // Fetch Total Departments
+                const departments = await departmentService.getDepartments();
+                setTotalDepartmentsCount(departments.length);
+
+                // Fetch Total Users
+                const users = await userService.getAllUsers();
+                setTotalUsersCount(users.length);
+
+                setError(null);
+            } catch (err) {
+                console.error("Error fetching data for ProfileBanner:", err);
+                setError("Failed to load data.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    if (error) return <div>{error}</div>;
+    // if (loading) return <div>Loading profile stats...</div>; // Keep loading indicator for a better UX, but omit for now as per previous instructions
+
   return (
     <>
       <CardBox className="p-0 overflow-hidden">
@@ -34,7 +74,7 @@ const ProfileBanner = () => {
                     className="block mx-auto text-ld opacity-50 "
                     size="20"
                   />
-                  <h4 className="text-xl">12</h4>
+                  <h4 className="text-xl">{loading ? '...' : activeReminderCount}</h4>
                   <p className="text-darklink text-sm">Active Reminders</p>
                 </div>
                 <div className="text-center">
@@ -42,7 +82,7 @@ const ProfileBanner = () => {
                     className="block mx-auto text-ld opacity-50"
                     size="20"
                   />
-                  <h4 className="text-xl">8</h4>
+                  <h4 className="text-xl">{loading ? '...' : totalDepartmentsCount}</h4>
                   <p className="text-darklink text-sm">Total Departments</p>
                 </div>
                 <div className="text-center">
@@ -50,7 +90,7 @@ const ProfileBanner = () => {
                     className="block mx-auto text-ld opacity-50"
                     size="20"
                   />
-                  <h4 className="text-xl">356</h4>
+                  <h4 className="text-xl">{loading ? '...' : totalUsersCount}</h4>
                   <p className="text-darklink text-sm">Total Users</p>
                 </div>
               </div>
