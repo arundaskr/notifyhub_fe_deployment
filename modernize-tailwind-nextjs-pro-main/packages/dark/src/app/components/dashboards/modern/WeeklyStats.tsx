@@ -4,8 +4,47 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 import CardBox from "../../shared/CardBox"
 import { Badge } from "flowbite-react";
+import { useState, useEffect } from "react";
+import { reminderService } from "@/app/services/api";
+import { Reminder } from "@/types/apps/invoice";
+import { isToday, isThisWeek, isPast, parseISO } from "date-fns";
+
 
 export const WeeklyStats = () => {
+    const [reminders, setReminders] = useState<Reminder[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchReminders = async () => {
+            try {
+                setLoading(true);
+                const fetchedReminders = await reminderService.getReminders();
+                setReminders(fetchedReminders);
+                setError(null);
+            } catch (err) {
+                setError("Failed to load reminders");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchReminders();
+    }, []);
+
+    if (error) return <div>{error}</div>;
+    if (loading) return <div>Loading reminders...</div>;
+
+    const todayReminders = reminders.filter(reminder => 
+        reminder.reminderStartDate && isToday(parseISO(reminder.reminderStartDate))
+    );
+
+    const weeklyReminders = reminders.filter(reminder => 
+        reminder.reminderStartDate && isThisWeek(parseISO(reminder.reminderStartDate))
+    );
+
+    const activeReminders = reminders.filter(reminder => reminder.active);
+    
     const ChartData: any = {
         series: [
             {
@@ -58,23 +97,26 @@ export const WeeklyStats = () => {
         {
             key:"topSales",
             title:"Active Reminders",
-            subtitle:"Submit timesheet",
+            subtitle: activeReminders.length > 0 ? activeReminders[0].description || "No active reminders" : "No active reminders",
             badgeColor:"lightprimary",
-            bgcolor:"bg-lightprimary text-primary"
+            bgcolor:"bg-lightprimary text-primary",
+            count: activeReminders.length
         },
         {
             key:"topSeller",
             title:"Weekly Reminders",
-            subtitle:"Fix login issue",
+            subtitle: weeklyReminders.length > 0 ? weeklyReminders[0].description || "No weekly reminders" : "No weekly reminders",
             badgeColor:"lightsuccess",
-            bgcolor:"bg-lightsuccess text-success"
+            bgcolor:"bg-lightsuccess text-success",
+            count: weeklyReminders.length
         },
         {
             key:"topCommented",
             title:"Todays Reminders",
-            subtitle:"Client meeting preparation",
+            subtitle: todayReminders.length > 0 ? todayReminders[0].description || "No reminders today" : "No reminders today",
             badgeColor:"lighterror",
-            bgcolor:"bg-lighterror text-error"
+            bgcolor:"bg-lighterror text-error",
+            count: todayReminders.length
         }
     ]
     return (
@@ -103,7 +145,7 @@ export const WeeklyStats = () => {
                             <p className=" dark:text-darklink ">{item.subtitle}</p>
                         </div>
                     </div>
-                    <Badge color={`${item.badgeColor}`} className="py-1.1 rounded-md text-sm" >+68</Badge>
+                    <Badge color={`${item.badgeColor}`} className="py-1.1 rounded-md text-sm" >{item.count}</Badge>
                 </div>
                 )
             })}
