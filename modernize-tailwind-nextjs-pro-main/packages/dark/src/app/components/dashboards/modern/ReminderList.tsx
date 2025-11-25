@@ -2,16 +2,18 @@
 import { Badge, Table, Button } from "flowbite-react"
 import CardBox from "../../shared/CardBox"
 import { Reminder } from "@/app/(DashboardLayout)/types/apps/reminder";
-import useSWR from "swr";
-import { getFetcher } from "@/app/api/globalFetcher";
 import Link from "next/link";
+import React, { useContext } from "react";
+import { UserDataContext } from "@/app/context/UserDataContext/index";
+
 
 export const ReminderList = () => {
 
-    const { data, error } = useSWR<Reminder[]>("/api/reminders", getFetcher);
+    const { reminders, loading } = useContext(UserDataContext);
 
-    if (error) return <div>Failed to load</div>
-    if (!data) return <div>Loading...</div>
+
+    if (loading) return <div>Loading...</div>
+    if (!reminders) return <div>No reminders found.</div>
 
     const renderTableRows = (data: Reminder[]) => (
         <Table.Body className="divide-y divide-border dark:divide-darkborder">
@@ -63,7 +65,7 @@ export const ReminderList = () => {
                                     Due Date
                                 </Table.HeadCell>
                             </Table.Head>
-                            {renderTableRows(data)}
+                            {reminders && renderTableRows(reminders.slice(0, 3))}
                         </Table>
                     </div>
                 </div>
@@ -85,7 +87,7 @@ export const ReminderList = () => {
                     </Link>
                 </div>
             </div>
-            {renderTable(data.slice(0, 3))}
+            {reminders && renderTable(reminders.slice(0, 3))}
         </CardBox>
     )
 }

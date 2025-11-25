@@ -1,17 +1,36 @@
-// 'use client'; is needed if this component is used in a Next.js App Router context.
 "use client";
 
-import { ApolloProvider } from "@apollo/client/react";
-import { client } from "@/app/libs/apollo-client";
-import { ReactNode } from "react";
+import { ApolloLink, HttpLink } from "@apollo/client";
+import {
+  ApolloNextAppProvider,
+  NextSSRInMemoryCache,
+  NextSSRApolloClient,
+  SSRMultipartLink,
+} from "@apollo/experimental-nextjs-app-support/ssr";
 
-// 2. Define the Wrapper Component.
-/**
+function makeClient() {
+  const httpLink = new HttpLink({
+      uri: "https://notifyhub-sandbox-1028525309597.us-central1.run.app/graphql/",
+  });
 
- * @param {object} props 
- * @param {ReactNode} props.children 
- * @returns {JSX.Element}
- */
-export function ApolloWrapper({ children }: { children: ReactNode }) {
-  return <ApolloProvider client={client}>{children}</ApolloProvider>;
+  return new NextSSRApolloClient({
+    cache: new NextSSRInMemoryCache(),
+    link:
+      typeof window === "undefined"
+        ? ApolloLink.from([
+            new SSRMultipartLink({
+              stripDefer: true,
+            }),
+            httpLink,
+          ])
+        : httpLink,
+  });
+}
+
+export function ApolloWrapper({ children }: React.PropsWithChildren) {
+  return (
+    <ApolloNextAppProvider makeClient={makeClient}>
+      {children}
+    </ApolloNextAppProvider>
+  );
 }

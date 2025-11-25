@@ -402,21 +402,19 @@ export const departmentService = {
 
 
 
-  async createDepartment(deptData: { userId: string; title: string; body: string }) {
+  async createDepartment(deptData: { name: string; companyId: string }) {
 
     const mutation = gql`
 
-      mutation CreateDepartment($userId: ID!, $title: String!, $body: String!) {
+      mutation CreateDepartment($name: String!, $companyId: ID!) {
 
-        createPost(input: { userId: $userId, title: $title, body: $body }) {
+        createDepartment(input: { name: $name, companyId: $companyId }) {
 
           id
 
-          title
+          name
 
-          body
-
-          user {
+          company {
 
             id
 
@@ -430,25 +428,23 @@ export const departmentService = {
 
     `;
 
-    const result = await client.mutate<{ createPost: { id: string; title: string; body: string; user: { id: string; name: string } } }>({
+    const result = await client.mutate<{ createDepartment: { id: string; name: string; company: { id: string; name: string } } }>({
 
       mutation,
 
       variables: {
 
-        userId: deptData.userId,
+        name: deptData.name,
 
-        title: deptData.title,
-
-        body: deptData.body,
+        companyId: deptData.companyId,
 
       },
 
     });
-    if (!result.data || !result.data.createPost) {
+    if (!result.data || !result.data.createDepartment) {
       throw new Error("Failed to create department.");
     }
-    return result.data.createPost;
+    return result.data.createDepartment;
 
   },
 
